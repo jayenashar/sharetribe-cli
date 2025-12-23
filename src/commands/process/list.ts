@@ -18,26 +18,77 @@ interface ProcessListResponse {
   }>;
 }
 
+interface ProcessVersion {
+  'process/createdAt': string;
+  'process/version': number;
+  'process/aliases'?: string[];
+  'process/transactionCount'?: number;
+}
+
+interface ProcessVersionsResponse {
+  data: ProcessVersion[];
+}
+
+/**
+ * Formats timestamp to match flex-cli format for process list
+ */
+function formatProcessTimestamp(timestamp: string): string {
+  try {
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const timeString = date.toLocaleTimeString('en-US');
+
+    return `${year}-${month}-${day} ${timeString}`;
+  } catch {
+    return timestamp;
+  }
+}
+
 /**
  * Lists all processes for a marketplace
  */
-export async function listProcesses(marketplace: string): Promise<void> {
+export async function listProcesses(marketplace: string, processName?: string): Promise<void> {
   try {
-    const response = await apiGet<ProcessListResponse>('/processes/query', {
-      marketplace,
-    });
+    // If processName is specified, show version history for that process
+    if (processName) {
+      const response = await apiGet<ProcessVersionsResponse>('/processes/query-versions', {
+        marketplace,
+        name: processName,
+      });
 
-    const processes = response.data.map((p) => ({
-      name: p['process/name'],
-      version: p['process/version']?.toString() || '',
-    }));
+      if (response.data.length === 0) {
+        console.log(`No versions found for process: ${processName}`);
+        return;
+      }
 
-    if (processes.length === 0) {
-      console.log('No processes found.');
-      return;
+      const versions = response.data.map((v) => ({
+        'Created': formatProcessTimestamp(v['process/createdAt']),
+        'Version': v['process/version'].toString(),
+        'Aliases': v['process/aliases']?.join(', ') || '',
+        'Transactions': v['process/transactionCount']?.toString() || '0',
+      }));
+
+      printTable(['Created', 'Version', 'Aliases', 'Transactions'], versions);
+    } else {
+      // List all processes
+      const response = await apiGet<ProcessListResponse>('/processes/query', {
+        marketplace,
+      });
+
+      const processes = response.data.map((p) => ({
+        'Name': p['process/name'],
+        'Latest version': p['process/version']?.toString() || '',
+      }));
+
+      if (processes.length === 0) {
+        console.log('No processes found.');
+        return;
+      }
+
+      printTable(['Name', 'Latest version'], processes);
     }
-
-    printTable(['name', 'version'], processes);
   } catch (error) {
     if (error && typeof error === 'object' && 'message' in error) {
       printError(error.message as string);

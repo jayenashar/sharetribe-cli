@@ -105,6 +105,29 @@ export function post(
 }
 
 /**
+ * Makes a POST request with Transit body
+ * Transit is a data format used by the Sharetribe API for certain endpoints
+ */
+export function postTransit(
+  url: string,
+  body: string,
+  headers?: Record<string, string>
+): Promise<HttpResponse> {
+  const allHeaders = {
+    'Content-Type': 'application/transit+json',
+    'Accept': 'application/transit+json',
+    'Content-Length': Buffer.byteLength(body).toString(),
+    ...headers,
+  };
+
+  return request(url, {
+    method: 'POST',
+    headers: allHeaders,
+    body,
+  });
+}
+
+/**
  * Makes a DELETE request
  */
 export function del(url: string, headers?: Record<string, string>): Promise<HttpResponse> {

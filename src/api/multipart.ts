@@ -16,9 +16,10 @@ export interface MultipartField {
 
 /**
  * Generates a random boundary for multipart form-data
+ * Returns the boundary without the -- prefix (that gets added when building the body)
  */
 function generateBoundary(): string {
-  return `----WebKitFormBoundary${randomBytes(16).toString('hex')}`;
+  return `WebKitFormBoundary${randomBytes(16).toString('hex')}`;
 }
 
 /**

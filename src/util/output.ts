@@ -9,7 +9,7 @@ import chalk from 'chalk';
 /**
  * Prints a table with headers and rows
  *
- * Matches flex-cli table formatting
+ * Matches flex-cli table formatting exactly
  */
 export function printTable(headers: string[], rows: Array<Record<string, string>>): void {
   if (rows.length === 0) {
@@ -17,9 +17,11 @@ export function printTable(headers: string[], rows: Array<Record<string, string>
   }
 
   // Calculate column widths
+  // flex-cli uses keywords (e.g., :version) which when stringified include the ':' prefix
+  // To match flex-cli widths, we add 1 to header length to simulate the ':' prefix
   const widths: Record<string, number> = {};
   for (const header of headers) {
-    widths[header] = header.length;
+    widths[header] = header.length + 1;  // +1 to match flex-cli keyword string behavior
   }
 
   for (const row of rows) {
@@ -29,19 +31,34 @@ export function printTable(headers: string[], rows: Array<Record<string, string>
     }
   }
 
-  // Print header
-  const headerRow = headers.map((h) => h.padEnd(widths[h] || 0)).join('  ');
-  console.log(chalk.bold(headerRow));
+  // Print empty line before table (like flex-cli)
+  console.log('');
 
-  // Print separator
-  const separator = headers.map((h) => '-'.repeat(widths[h] || 0)).join('  ');
-  console.log(separator);
+  // Print header with bold formatting
+  // flex-cli format: each column padded to (max_width + 1), with single space separator between columns
+  // Last column: padding but no separator (interpose doesn't add separator after last element)
+  const headerParts = headers.map((h, i) => {
+    const width = widths[h] || 0;
+    const padded = h.padEnd(width + 1);
+    return i === headers.length - 1 ? padded : padded + ' ';
+  });
+  const headerRow = headerParts.join('');
+  console.log(chalk.bold.black(headerRow));
 
-  // Print rows
+  // Print rows with same formatting
   for (const row of rows) {
-    const rowStr = headers.map((h) => (row[h] || '').padEnd(widths[h] || 0)).join('  ');
+    const rowParts = headers.map((h, i) => {
+      const value = row[h] || '';
+      const width = widths[h] || 0;
+      const padded = value.padEnd(width + 1);
+      return i === headers.length - 1 ? padded : padded + ' ';
+    });
+    const rowStr = rowParts.join('');
     console.log(rowStr);
   }
+
+  // Print empty line after table (like flex-cli)
+  console.log('');
 }
 
 /**

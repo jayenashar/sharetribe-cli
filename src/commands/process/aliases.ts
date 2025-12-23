@@ -2,7 +2,8 @@
  * Process alias commands
  */
 
-import { apiPost, apiDelete } from '../../api/client.js';
+import { apiPostTransit, apiDelete } from '../../api/client.js';
+import { keyword, keywordMap } from '../../api/transit.js';
 import { printError, printSuccess } from '../../util/output.js';
 
 /**
@@ -15,14 +16,14 @@ export async function createAlias(
   alias: string
 ): Promise<void> {
   try {
-    const response = await apiPost<{ data: { 'processAlias/alias': string; 'processAlias/version': number } }>(
+    const response = await apiPostTransit<{ data: { 'processAlias/alias': string; 'processAlias/version': number } }>(
       '/aliases/create-alias',
       { marketplace },
-      {
-        name: processName,
+      keywordMap({
+        name: keyword(processName),
         version,
-        alias,
-      }
+        alias: keyword(alias),
+      })
     );
 
     printSuccess(
@@ -48,14 +49,14 @@ export async function updateAlias(
   alias: string
 ): Promise<void> {
   try {
-    const response = await apiPost<{ data: { 'processAlias/alias': string; 'processAlias/version': number } }>(
+    const response = await apiPostTransit<{ data: { 'processAlias/alias': string; 'processAlias/version': number } }>(
       '/aliases/update-alias',
       { marketplace },
-      {
-        name: processName,
+      keywordMap({
+        name: keyword(processName),
         version,
-        alias,
-      }
+        alias: keyword(alias),
+      })
     );
 
     printSuccess(
@@ -80,13 +81,16 @@ export async function deleteAlias(
   alias: string
 ): Promise<void> {
   try {
-    await apiDelete('/aliases/delete', {
-      marketplace,
-      name: processName,
-      alias,
-    });
+    const response = await apiPostTransit<{ data: { 'processAlias/alias': string } }>(
+      '/aliases/delete-alias',
+      { marketplace },
+      keywordMap({
+        name: keyword(processName),
+        alias: keyword(alias),
+      })
+    );
 
-    printSuccess(`Alias ${alias} successfully deleted.`);
+    printSuccess(`Alias ${response.data['processAlias/alias']} successfully deleted.`);
   } catch (error) {
     if (error && typeof error === 'object' && 'message' in error) {
       printError(error.message as string);

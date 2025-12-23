@@ -4,12 +4,16 @@
  * Handles authentication and API requests to Sharetribe backend
  */
 
-import { get, post, del, HttpResponse } from './http-client.js';
+import { get, post, del, request, postTransit, HttpResponse } from './http-client.js';
 import { createMultipartBody, MultipartField } from './multipart.js';
+import { encodeTransit, decodeTransit } from './transit.js';
 import { readAuth } from '../auth/auth-storage.js';
 
-// API base URL - will be determined from flex-cli source
-const API_BASE_URL = 'https://flex-api.sharetribe.com/v1';
+// Re-export MultipartField for use in commands
+export type { MultipartField };
+
+// API base URL - must match flex-cli exactly
+const API_BASE_URL = 'https://flex-build-api.sharetribe.com/v1/build-api';
 
 export interface ApiError {
   code: string;
@@ -27,7 +31,7 @@ function getAuthHeaders(): Record<string, string> {
   }
 
   return {
-    Authorization: `Bearer ${auth.apiKey}`,
+    Authorization: `Apikey ${auth.apiKey}`,
   };
 }
 
@@ -64,7 +68,7 @@ function handleResponse<T>(response: HttpResponse): T {
  * Makes a GET request to the API
  */
 export async function apiGet<T>(endpoint: string, queryParams?: Record<string, string>): Promise<T> {
-  const url = new URL(endpoint, API_BASE_URL);
+  const url = new URL(API_BASE_URL + endpoint);
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
@@ -83,7 +87,7 @@ export async function apiPost<T>(
   queryParams?: Record<string, string>,
   body?: unknown
 ): Promise<T> {
-  const url = new URL(endpoint, API_BASE_URL);
+  const url = new URL(API_BASE_URL + endpoint);
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
@@ -101,7 +105,7 @@ export async function apiDelete<T>(
   endpoint: string,
   queryParams?: Record<string, string>
 ): Promise<T> {
-  const url = new URL(endpoint, API_BASE_URL);
+  const url = new URL(API_BASE_URL + endpoint);
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
@@ -120,7 +124,7 @@ export async function apiPostMultipart<T>(
   queryParams: Record<string, string>,
   fields: MultipartField[]
 ): Promise<T> {
-  const url = new URL(endpoint, API_BASE_URL);
+  const url = new URL(API_BASE_URL + endpoint);
   Object.entries(queryParams).forEach(([key, value]) => {
     url.searchParams.append(key, value);
   });
@@ -133,6 +137,42 @@ export async function apiPostMultipart<T>(
     'Content-Length': body.length.toString(),
   };
 
-  const response = await post(url.toString(), body, headers);
+  const response = await request(url.toString(), {
+    method: 'POST',
+    headers,
+    body,
+  });
   return handleResponse<T>(response);
+}
+
+/**
+ * Makes a POST request to the API with Transit-encoded body
+ * Transit is a data format used by the Sharetribe API for certain endpoints
+ */
+export async function apiPostTransit<T>(
+  endpoint: string,
+  queryParams: Record<string, string>,
+  body: unknown
+): Promise<T> {
+  const url = new URL(API_BASE_URL + endpoint);
+  Object.entries(queryParams).forEach(([key, value]) => {
+    url.searchParams.append(key, value);
+  });
+
+  const transitBody = encodeTransit(body);
+  const response = await postTransit(url.toString(), transitBody, getAuthHeaders());
+
+  // Parse Transit response
+  if (response.statusCode >= 400) {
+    const errorData = decodeTransit(response.body) as any;
+    const firstError = errorData.errors?.[0];
+    const error: ApiError = {
+      code: firstError?.code || 'UNKNOWN_ERROR',
+      message: firstError?.title || `HTTP ${response.statusCode}`,
+      status: response.statusCode,
+    };
+    throw error;
+  }
+
+  return decodeTransit(response.body) as T;
 }

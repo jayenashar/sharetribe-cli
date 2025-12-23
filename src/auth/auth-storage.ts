@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import * as edn from 'jsedn';
+import edn from 'jsedn';
 
 const CONFIG_DIR = join(homedir(), '.config', 'flex-cli');
 const AUTH_FILE = join(CONFIG_DIR, 'auth.edn');

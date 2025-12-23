@@ -4,7 +4,7 @@
  * Parses transaction process definitions from EDN format
  */
 
-import * as edn from 'jsedn';
+import edn from 'jsedn';
 import { readFileSync } from 'node:fs';
 
 export interface ProcessState {
