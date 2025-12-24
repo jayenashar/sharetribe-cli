@@ -31,4 +31,6 @@ tmp/
 temp/
 
 # Documentation (internal)
-*.md
+/*.md
+!/README.md
+

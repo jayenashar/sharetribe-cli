@@ -1,33 +1,22 @@
 {
-  "name": "sharetribe-cli",
-  "version": "1.15.0",
-  "description": "Unofficial Sharetribe CLI - 100% compatible with flex-cli",
-  "type": "module",
-  "main": "./dist/index.js",
-  "bin": {
-    "sharetribe-cli": "./dist/index.js"
-  },
-  "engines": {
-    "node": ">=18.0.0"
-  },
+  "name": "sharetribe-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for Sharetribe CLI and SDK",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "node build.js",
-    "build:dev": "node build.js --dev",
-    "dev": "node build.js --dev --watch",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "lint": "eslint src/**/*.ts",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\"",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules"
   },
   "keywords": [
     "sharetribe",
     "flex",
     "cli",
-    "marketplace",
-    "transaction-process"
+    "sdk"
   ],
   "author": "",
   "license": "Apache-2.0",
@@ -35,24 +24,5 @@
     "type": "git",
     "url": "https://github.com/jayenashar/sharetribe-cli"
   },
-  "dependencies": {
-    "@types/yargs": "^17.0.35",
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0",
-    "inquirer": "^9.2.23",
-    "jsedn": "^0.4.1",
-    "transit-js": "^0.8.874",
-    "yargs": "^18.0.0"
-  },
-  "devDependencies": {
-    "@types/inquirer": "^9.0.7",
-    "@types/node": "^20.17.10",
-    "@typescript-eslint/eslint-plugin": "^8.18.2",
-    "@typescript-eslint/parser": "^8.18.2",
-    "esbuild": "^0.27.2",
-    "eslint": "^9.17.0",
-    "prettier": "^3.4.2",
-    "typescript": "^5.7.2",
-    "vitest": "^4.0.16"
-  }
+  "devDependencies": {}
 }
