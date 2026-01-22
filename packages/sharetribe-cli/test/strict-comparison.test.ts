@@ -12,12 +12,18 @@ const MARKETPLACE = 'expertapplication-dev';
 /**
  * Executes a CLI command and returns output (stdout + stderr combined)
  */
-function runCli(command: string, cli: 'flex' | 'sharetribe'): string {
+function runCli(
+  command: string,
+  cli: 'flex' | 'sharetribe',
+  envOverrides?: Record<string, string>
+): string {
   const cliName = cli === 'flex' ? 'flex-cli' : 'sharetribe-cli';
+  const env = envOverrides ? { ...process.env, ...envOverrides } : process.env;
   try {
     return execSync(`${cliName} ${command}`, {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
+      env,
     });
   } catch (error) {
     if (error instanceof Error && 'stdout' in error && 'stderr' in error) {
@@ -81,6 +87,29 @@ describe('Strict Byte-by-Byte Comparison Tests', () => {
       const flexLines = flexOutput.trim().split('\n');
       const shareLines = shareOutput.trim().split('\n');
       expect(shareLines).toEqual(flexLines);
+    });
+  });
+
+  describe('debug command', () => {
+    it('debug output matches flex-cli when available', () => {
+      const apiBaseUrl = 'https://example.invalid/build-api';
+      const flexOutput = runCli('debug', 'flex', {
+        FLEX_API_BASE_URL: apiBaseUrl,
+      });
+      const shareOutput = runCli('debug', 'sharetribe', {
+        FLEX_API_BASE_URL: apiBaseUrl,
+      });
+
+      const flexMissingDebug =
+        flexOutput.includes('Command not found: debug') ||
+        flexOutput.includes('unknown command');
+
+      if (flexMissingDebug) {
+        expect(shareOutput).toContain(apiBaseUrl);
+        expect(shareOutput).not.toContain('Command not found: debug');
+      } else {
+        expect(shareOutput).toBe(flexOutput);
+      }
     });
   });
 
