@@ -8,12 +8,10 @@ import { get, post, del, request, postTransit, HttpResponse } from './http-clien
 import { createMultipartBody, MultipartField } from './multipart.js';
 import { encodeTransit, decodeTransit } from './transit.js';
 import { readAuth } from '../auth-storage.js';
+import { getApiBaseUrl } from '../config.js';
 
 // Re-export MultipartField for use in commands
 export type { MultipartField };
-
-// API base URL - must match flex-cli exactly
-const API_BASE_URL = 'https://flex-build-api.sharetribe.com/v1/build-api';
 
 export interface ApiError {
   code: string;
@@ -81,7 +79,7 @@ function handleResponse<T>(response: HttpResponse): T {
  * @returns API response
  */
 export async function apiGet<T>(apiKey: string | undefined, endpoint: string, queryParams?: Record<string, string>): Promise<T> {
-  const url = new URL(API_BASE_URL + endpoint);
+  const url = new URL(getApiBaseUrl() + endpoint);
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
@@ -107,7 +105,7 @@ export async function apiPost<T>(
   queryParams?: Record<string, string>,
   body?: unknown
 ): Promise<T> {
-  const url = new URL(API_BASE_URL + endpoint);
+  const url = new URL(getApiBaseUrl() + endpoint);
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
@@ -131,7 +129,7 @@ export async function apiDelete<T>(
   endpoint: string,
   queryParams?: Record<string, string>
 ): Promise<T> {
-  const url = new URL(API_BASE_URL + endpoint);
+  const url = new URL(getApiBaseUrl() + endpoint);
   if (queryParams) {
     Object.entries(queryParams).forEach(([key, value]) => {
       url.searchParams.append(key, value);
@@ -157,7 +155,7 @@ export async function apiPostMultipart<T>(
   queryParams: Record<string, string>,
   fields: MultipartField[]
 ): Promise<T> {
-  const url = new URL(API_BASE_URL + endpoint);
+  const url = new URL(getApiBaseUrl() + endpoint);
   Object.entries(queryParams).forEach(([key, value]) => {
     url.searchParams.append(key, value);
   });
@@ -194,7 +192,7 @@ export async function apiPostTransit<T>(
   queryParams: Record<string, string>,
   body: unknown
 ): Promise<T> {
-  const url = new URL(API_BASE_URL + endpoint);
+  const url = new URL(getApiBaseUrl() + endpoint);
   Object.entries(queryParams).forEach(([key, value]) => {
     url.searchParams.append(key, value);
   });

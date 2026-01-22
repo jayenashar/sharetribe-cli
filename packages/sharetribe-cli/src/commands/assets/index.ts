@@ -11,6 +11,7 @@ import { printError } from '../../util/output.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
+import chalk from 'chalk';
 import edn from 'jsedn';
 
 
@@ -81,7 +82,8 @@ function writeAssetMetadata(basePath: string, metadata: AssetMetadata): void {
  * Calculates SHA-1 hash of file content
  */
 function calculateHash(data: Buffer): string {
-  return createHash('sha1').update(data).digest('hex');
+  const prefix = Buffer.from(`${data.length}|`, 'utf-8');
+  return createHash('sha1').update(prefix).update(data).digest('hex');
 }
 
 /**
@@ -272,6 +274,13 @@ async function pushAssets(
     if (operations.length === 0) {
       console.log('Assets are up to date.');
       return;
+    }
+
+    const changedAssetPaths = operations
+      .filter(op => op.op === 'upsert')
+      .map(op => op.path);
+    if (changedAssetPaths.length > 0) {
+      console.log(chalk.green(`Uploading changed assets: ${changedAssetPaths.join(', ')}`));
     }
 
     // Upload to API

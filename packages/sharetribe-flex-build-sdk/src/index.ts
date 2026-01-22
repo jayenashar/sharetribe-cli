@@ -64,6 +64,7 @@ export {
 
 // Export authentication functions
 export {
+  readAuth,
   writeAuth,
   clearAuth,
   type AuthData,
@@ -99,3 +100,10 @@ export {
   SUPPORTED_STRIPE_VERSIONS,
   type StripeApiVersion,
 } from './stripe.js';
+
+// Export configuration helpers
+export {
+  getApiBaseUrl,
+  getConfigMap,
+  DEFAULT_API_BASE_URL,
+} from './config.js';

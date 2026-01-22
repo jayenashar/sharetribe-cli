@@ -18,6 +18,7 @@ import { registerNotificationsCommands } from './commands/notifications/index.js
 import { registerListingApprovalCommand } from './commands/listing-approval.js';
 import { registerEventsCommand } from './commands/events/index.js';
 import { registerStripeCommands } from './commands/stripe/index.js';
+import { debug } from './commands/debug.js';
 import { configureHelp } from './util/help-formatter.js';
 import { routeProcessCommand } from './util/command-router.js';
 
@@ -73,6 +74,14 @@ program
   .description('logout')
   .action(async () => {
     await logout();
+  });
+
+// debug command (hidden)
+program
+  .command('debug', { hidden: true })
+  .description('display debug info')
+  .action(() => {
+    debug();
   });
 
 // Register process commands
