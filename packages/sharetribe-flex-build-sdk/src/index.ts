@@ -74,9 +74,11 @@ export {
 export {
   pullAssets,
   pushAssets,
+  stageAsset,
   type Asset,
   type PullAssetsResult,
   type PushAssetsResult,
+  type StageAssetResult,
 } from './assets.js';
 
 // Export notification management functions

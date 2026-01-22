@@ -6,6 +6,7 @@ import { Command } from 'commander';
 import {
   pullAssets as sdkPullAssets,
   pushAssets as sdkPushAssets,
+  stageAsset as sdkStageAsset,
 } from 'sharetribe-flex-build-sdk';
 import { printError } from '../../util/output.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
@@ -79,7 +80,8 @@ function writeAssetMetadata(basePath: string, metadata: AssetMetadata): void {
 }
 
 /**
- * Calculates SHA-1 hash of file content
+ * Calculates SHA-1 hash of file content matching backend convention
+ * Content is prefixed with `${byte-count}|` before hashing
  */
 function calculateHash(data: Buffer): string {
   const prefix = Buffer.from(`${data.length}|`, 'utf-8');
@@ -97,6 +99,7 @@ function readLocalAssets(basePath: string): Array<{ path: string; data: Buffer; 
 
     for (const entry of entries) {
       if (entry === '.flex-cli') continue; // Skip metadata directory
+      if (entry === '.DS_Store') continue; // Skip .DS_Store files
 
       const fullPath = join(dir, entry);
       const relPath = relativePath ? join(relativePath, entry) : entry;
@@ -141,7 +144,7 @@ async function pullAssets(
   prune?: boolean
 ): Promise<void> {
   try {
-    // Validate path
+    // Create directory if it doesn't exist
     if (!existsSync(path)) {
       mkdirSync(path, { recursive: true });
     }
@@ -213,6 +216,22 @@ async function pullAssets(
 }
 
 /**
+ * Filters assets to only those that have changed
+ */
+function filterChangedAssets(
+  existingMeta: Array<{ path: string; 'content-hash': string }>,
+  localAssets: Array<{ path: string; hash: string }>
+): Array<{ path: string; data: Buffer; hash: string }> {
+  const hashByPath = new Map(existingMeta.map(a => [a.path, a['content-hash']]));
+  
+  return localAssets.filter(asset => {
+    const storedHash = hashByPath.get(asset.path);
+    // Assets without stored metadata are treated as changed
+    return !storedHash || storedHash !== asset.hash;
+  });
+}
+
+/**
  * Pushes assets to remote
  */
 async function pushAssets(
@@ -236,33 +255,23 @@ async function pushAssets(
     // Validate JSON files
     validateJsonAssets(localAssets);
 
-    // Build operations
-    const operations: Array<{
-      path: string;
-      op: 'upsert' | 'delete';
-      data?: Buffer;
-    }> = [];
+    // Filter to only changed assets
+    const changedAssets = filterChangedAssets(currentMeta?.assets || [], localAssets);
 
-    // Find assets to upsert (new or changed)
-    const localAssetMap = new Map(localAssets.map(a => [a.path, a]));
-    const currentAssetMap = new Map((currentMeta?.assets || []).map(a => [a.path, a['content-hash']]));
+    // Separate JSON and non-JSON assets
+    const isJsonAsset = (assetPath: string): boolean => {
+      return assetPath.toLowerCase().endsWith('.json');
+    };
 
-    for (const [assetPath, asset] of localAssetMap) {
-      const currentHash = currentAssetMap.get(assetPath);
-      if (!currentHash || currentHash !== asset.hash) {
-        operations.push({
-          path: assetPath,
-          op: 'upsert',
-          data: asset.data,
-        });
-      }
-    }
+    const stageableAssets = changedAssets.filter(a => !isJsonAsset(a.path));
 
     // Find assets to delete (if prune enabled)
+    const localAssetMap = new Map(localAssets.map(a => [a.path, a]));
+    const deleteOperations: Array<{ path: string; op: 'delete' }> = [];
     if (prune && currentMeta) {
       for (const currentAsset of currentMeta.assets) {
         if (!localAssetMap.has(currentAsset.path)) {
-          operations.push({
+          deleteOperations.push({
             path: currentAsset.path,
             op: 'delete',
           });
@@ -271,20 +280,62 @@ async function pushAssets(
     }
 
     // Check if there are any changes
-    if (operations.length === 0) {
+    const noOps = changedAssets.length === 0 && deleteOperations.length === 0;
+    if (noOps) {
       console.log('Assets are up to date.');
       return;
     }
 
-    const changedAssetPaths = operations
-      .filter(op => op.op === 'upsert')
-      .map(op => op.path);
-    if (changedAssetPaths.length > 0) {
-      console.log(chalk.green(`Uploading changed assets: ${changedAssetPaths.join(', ')}`));
+    // Log changed assets
+    if (changedAssets.length > 0) {
+      const paths = changedAssets.map(a => a.path).join(', ');
+      console.log(chalk.green(`Uploading changed assets: ${paths}`));
     }
 
+    // Stage non-JSON assets
+    const stagedByPath = new Map<string, string>();
+    if (stageableAssets.length > 0) {
+      const paths = stageableAssets.map(a => a.path).join(', ');
+      console.log(chalk.green(`Staging assets: ${paths}`));
+
+      for (const asset of stageableAssets) {
+        try {
+          const stagingResult = await sdkStageAsset(
+            undefined,
+            marketplace,
+            asset.data,
+            asset.path
+          );
+          stagedByPath.set(asset.path, stagingResult.stagingId);
+        } catch (error) {
+          if (error && typeof error === 'object' && 'code' in error && error.code === 'asset-invalid-content') {
+            const detail = 'message' in error ? error.message : 'The file is missing or uses an unsupported format.';
+            throw new Error(`Failed to stage image ${asset.path}: ${detail}\nFix the file and rerun assets push to retry staging.`);
+          }
+          throw error;
+        }
+      }
+    }
+
+    // Build upsert operations
+    const upsertOperations = changedAssets.map(asset => {
+      const stagingId = stagedByPath.get(asset.path);
+      return {
+        path: asset.path,
+        op: 'upsert' as const,
+        ...(stagingId
+          ? { stagingId }
+          : { data: asset.data, filename: asset.path }),
+      };
+    });
+
     // Upload to API
-    const result = await sdkPushAssets(undefined, marketplace, currentVersion, operations);
+    const result = await sdkPushAssets(
+      undefined,
+      marketplace,
+      currentVersion,
+      [...upsertOperations, ...deleteOperations]
+    );
 
     // Update local metadata
     writeAssetMetadata(path, {

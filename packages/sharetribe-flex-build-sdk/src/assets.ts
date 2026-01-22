@@ -22,6 +22,10 @@ export interface PushAssetsResult {
   assets: Array<{ path: string; contentHash: string }>;
 }
 
+export interface StageAssetResult {
+  stagingId: string;
+}
+
 /**
  * Pulls assets from remote
  *
@@ -68,6 +72,34 @@ export async function pullAssets(
 }
 
 /**
+ * Stages an asset for upload
+ *
+ * @param apiKey - Sharetribe API key (optional, reads from auth file if not provided)
+ * @param marketplace - Marketplace ID
+ * @param fileData - File data as Buffer
+ * @param filename - Filename
+ * @returns Staging ID
+ */
+export async function stageAsset(
+  apiKey: string | undefined,
+  marketplace: string,
+  fileData: Buffer,
+  filename: string
+): Promise<StageAssetResult> {
+  const fields: MultipartField[] = [
+    { name: 'file', value: fileData, filename },
+  ];
+
+  const response = await apiPostMultipart<{
+    data: { 'staging-id': string };
+  }>(apiKey, '/assets/stage', { marketplace }, fields);
+
+  return {
+    stagingId: response.data['staging-id'],
+  };
+}
+
+/**
  * Pushes assets to remote
  *
  * @param apiKey - Sharetribe API key (optional, reads from auth file if not provided)
@@ -84,6 +116,8 @@ export async function pushAssets(
     path: string;
     op: 'upsert' | 'delete';
     data?: Buffer;
+    stagingId?: string;
+    filename?: string;
   }>
 ): Promise<PushAssetsResult> {
   const fields: MultipartField[] = [
@@ -94,8 +128,13 @@ export async function pushAssets(
     const op = operations[i];
     fields.push({ name: `path-${i}`, value: op.path });
     fields.push({ name: `op-${i}`, value: op.op });
-    if (op.op === 'upsert' && op.data) {
-      fields.push({ name: `data-raw-${i}`, value: op.data });
+    if (op.op === 'upsert') {
+      if (op.stagingId) {
+        fields.push({ name: `staging-id-${i}`, value: String(op.stagingId) });
+      } else if (op.data) {
+        const fname = op.filename || op.path;
+        fields.push({ name: `data-raw-${i}`, value: op.data, filename: fname });
+      }
     }
   }
 
