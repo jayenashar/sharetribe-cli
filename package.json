@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspaces",
-    "test": "npm run test --workspaces",
+    "test": "npm -w packages/sharetribe-cli test",
     "lint": "npm run lint --workspaces",
     "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules"
   },

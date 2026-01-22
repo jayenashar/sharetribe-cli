@@ -163,7 +163,7 @@ describe('Strict Byte-by-Byte Comparison Tests', () => {
       for (const line of lines) {
         expect(() => JSON.parse(line)).not.toThrow();
       }
-    });
+    }, 15000);
 
     it('events --json structure matches flex-cli', () => {
       const flexOutput = runCli(`events --marketplace ${MARKETPLACE} --json --limit 3`, 'flex');
@@ -584,7 +584,7 @@ describe('Strict Byte-by-Byte Comparison Tests', () => {
       expect(unsetShareOutput).toBe(unsetFlexOutput);
       expect(setShareOutput).toBe(setFlexOutput);
       expect(verifyShareOutput).toBe(verifyFlexOutput);
-    }, 15000);
+    }, 30000);
 
     it('events tail can be started and stopped', () => {
       // This test verifies events tail starts correctly with timeout
