@@ -76,9 +76,9 @@ program
     await logout();
   });
 
-// debug command (hidden)
+// debug command
 program
-  .command('debug', { hidden: true })
+  .command('debug')
   .description('display debug info')
   .action(() => {
     debug();
