@@ -173,6 +173,35 @@ describe('Help Comparison Tests', () => {
     });
   });
 
+  describe('help search set option descriptions', () => {
+    it('matches flex-cli wording for key and scope options', () => {
+      const shareOutput = runCli('help search set', 'sharetribe');
+      expect(shareOutput).toContain('key name');
+      expect(shareOutput).toContain('extended data scope (either metadata or public for listing schema,');
+      expect(shareOutput).toContain('metadata, private, protected or public for userProfile schema,');
+      expect(shareOutput).toContain('metadata or protected for transaction schema)');
+    });
+
+    it('matches flex-cli wording for type and schema-for options', () => {
+      const shareOutput = runCli('help search set', 'sharetribe');
+      expect(shareOutput).toContain('value type (either enum, multi-enum, boolean, long or text)');
+      expect(shareOutput).toContain('Subject of the schema (either listing, userProfile or transaction,');
+      expect(shareOutput).toContain('defaults to listing');
+    });
+  });
+
+  describe('help search unset option descriptions', () => {
+    it('matches flex-cli wording for key, scope, and schema-for options', () => {
+      const shareOutput = runCli('help search unset', 'sharetribe');
+      expect(shareOutput).toContain('key name');
+      expect(shareOutput).toContain('extended data scope (either metadata or public for listing schema,');
+      expect(shareOutput).toContain('metadata, private, protected or public for userProfile schema,');
+      expect(shareOutput).toContain('metadata or protected for transaction schema)');
+      expect(shareOutput).toContain('Subject of the schema (either listing, userProfile or transaction,');
+      expect(shareOutput).toContain('defaults to listing');
+    });
+  });
+
   describe('help notifications', () => {
     it('has correct structure', () => {
       const shareOutput = runCli('help notifications', 'sharetribe');

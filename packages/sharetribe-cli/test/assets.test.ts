@@ -7,6 +7,9 @@ import { mkdtempSync, writeFileSync, existsSync, rmSync, readdirSync } from 'fs'
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { createHash } from 'node:crypto';
+import { __test__ as assetsTestHelpers } from '../src/commands/assets/index.js';
+
+const { formatDownloadProgress } = assetsTestHelpers;
 
 /**
  * Calculates SHA-1 hash matching backend convention
@@ -137,5 +140,17 @@ describe('Asset Type Detection', () => {
     expect(isJsonAsset('test.jpg')).toBe(false);
     expect(isJsonAsset('test.txt')).toBe(false);
     expect(isJsonAsset('test.svg')).toBe(false);
+  });
+});
+
+describe('Asset Pull Progress Output', () => {
+  it('formats progress with carriage return and clear line', () => {
+    const output = formatDownloadProgress(0);
+    expect(output).toBe('\r\x1b[KDownloaded 0.00MB');
+  });
+
+  it('formats progress with two decimal MB values', () => {
+    const output = formatDownloadProgress(1024 * 1024);
+    expect(output).toBe('\r\x1b[KDownloaded 1.00MB');
   });
 });

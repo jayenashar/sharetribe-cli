@@ -208,12 +208,18 @@ export function registerSearchCommands(program: Command): void {
   searchCmd
     .command('set')
     .description('set search schema')
-    .requiredOption('--key <KEY>', 'schema key')
-    .requiredOption('--scope <SCOPE>', 'schema scope')
-    .requiredOption('--type <TYPE>', 'value type (enum, multi-enum, boolean, long, or text)')
+    .requiredOption('--key <KEY>', 'key name')
+    .requiredOption(
+      '--scope <SCOPE>',
+      'extended data scope (either metadata or public for listing schema, metadata, private, protected or public for userProfile schema, metadata or protected for transaction schema)'
+    )
+    .requiredOption('--type <TYPE>', 'value type (either enum, multi-enum, boolean, long or text)')
     .option('--doc <DOC>', 'description of the schema')
     .option('--default <DEFAULT>', 'default value for search if value is not set')
-    .option('--schema-for <SCHEMA_FOR>', 'subject of the schema (listing, userProfile, or transaction)')
+    .option(
+      '--schema-for <SCHEMA_FOR>',
+      'Subject of the schema (either listing, userProfile or transaction, defaults to listing)'
+    )
     .option('-m, --marketplace <MARKETPLACE_ID>', 'marketplace identifier')
     .action(async (opts) => {
       const marketplace = opts.marketplace || program.opts().marketplace;
@@ -235,9 +241,15 @@ export function registerSearchCommands(program: Command): void {
   searchCmd
     .command('unset')
     .description('unset search schema')
-    .requiredOption('--key <KEY>', 'schema key')
-    .requiredOption('--scope <SCOPE>', 'schema scope')
-    .option('--schema-for <SCHEMA_FOR>', 'subject of the schema (listing, userProfile, or transaction)')
+    .requiredOption('--key <KEY>', 'key name')
+    .requiredOption(
+      '--scope <SCOPE>',
+      'extended data scope (either metadata or public for listing schema, metadata, private, protected or public for userProfile schema, metadata or protected for transaction schema)'
+    )
+    .option(
+      '--schema-for <SCHEMA_FOR>',
+      'Subject of the schema (either listing, userProfile or transaction, defaults to listing)'
+    )
     .option('-m, --marketplace <MARKETPLACE_ID>', 'marketplace identifier')
     .action(async (opts) => {
       const marketplace = opts.marketplace || program.opts().marketplace;

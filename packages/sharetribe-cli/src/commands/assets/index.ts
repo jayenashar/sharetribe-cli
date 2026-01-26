@@ -4,21 +4,67 @@
 
 import { Command } from 'commander';
 import {
-  pullAssets as sdkPullAssets,
   pushAssets as sdkPushAssets,
   stageAsset as sdkStageAsset,
+  getApiBaseUrl,
+  readAuth,
 } from 'sharetribe-flex-build-sdk';
 import { printError } from '../../util/output.js';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+  unlinkSync,
+  createWriteStream,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import { createHash } from 'node:crypto';
+import * as http from 'node:http';
+import * as https from 'node:https';
+import { tmpdir } from 'node:os';
+import { pipeline } from 'node:stream/promises';
 import chalk from 'chalk';
 import edn from 'jsedn';
+import yauzl from 'yauzl';
 
 
 interface AssetMetadata {
   version: string;
   assets: Array<{ path: string; 'content-hash': string }>;
+}
+
+const ASSET_META_FILENAME = 'meta/asset-meta.edn';
+const ASSETS_DIR = 'assets/';
+const CLEAR_LINE = '\x1b[K';
+const CARRIAGE_RETURN = '\r';
+
+function parseAssetMetadataEdn(content: string): AssetMetadata | null {
+  try {
+    const parsed = edn.parse(content);
+    const version = parsed.at(edn.kw(':version')) || parsed.at(edn.kw(':aliased-version'));
+    const assets = parsed.at(edn.kw(':assets'));
+
+    const assetList: Array<{ path: string; 'content-hash': string }> = [];
+    if (assets && assets.val) {
+      for (const asset of assets.val) {
+        assetList.push({
+          path: asset.at(edn.kw(':path')),
+          'content-hash': asset.at(edn.kw(':content-hash')),
+        });
+      }
+    }
+
+    if (!version) {
+      return null;
+    }
+
+    return { version, assets: assetList };
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -32,23 +78,7 @@ function readAssetMetadata(basePath: string): AssetMetadata | null {
 
   try {
     const content = readFileSync(metaPath, 'utf-8');
-    const parsed = edn.parse(content);
-
-    // Convert EDN map to JavaScript object
-    const version = parsed.at(edn.kw(':version'));
-    const assets = parsed.at(edn.kw(':assets'));
-
-    const assetList: Array<{ path: string; 'content-hash': string }> = [];
-    if (assets && assets.val) {
-      for (const asset of assets.val) {
-        assetList.push({
-          path: asset.at(edn.kw(':path')),
-          'content-hash': asset.at(edn.kw(':content-hash')),
-        });
-      }
-    }
-
-    return { version, assets: assetList };
+    return parseAssetMetadataEdn(content);
   } catch {
     return null;
   }
@@ -120,6 +150,35 @@ function readLocalAssets(basePath: string): Array<{ path: string; data: Buffer; 
 }
 
 /**
+ * Lists local asset paths without reading file data
+ */
+function listLocalAssetPaths(basePath: string): string[] {
+  const assets: string[] = [];
+
+  function scanDir(dir: string, relativePath: string = '') {
+    const entries = readdirSync(dir);
+
+    for (const entry of entries) {
+      if (entry === '.flex-cli') continue;
+      if (entry === '.DS_Store') continue;
+
+      const fullPath = join(dir, entry);
+      const relPath = relativePath ? join(relativePath, entry) : entry;
+      const stat = statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        scanDir(fullPath, relPath);
+      } else if (stat.isFile()) {
+        assets.push(relPath);
+      }
+    }
+  }
+
+  scanDir(basePath);
+  return assets;
+}
+
+/**
  * Validates JSON files
  */
 function validateJsonAssets(assets: Array<{ path: string; data: Buffer }>): void {
@@ -132,6 +191,186 @@ function validateJsonAssets(assets: Array<{ path: string; data: Buffer }>): void
       }
     }
   }
+}
+
+function formatDownloadProgress(bytes: number): string {
+  const mb = bytes / 1024 / 1024;
+  return `${CARRIAGE_RETURN}${CLEAR_LINE}Downloaded ${mb.toFixed(2)}MB`;
+}
+
+function printDownloadProgress(stream: NodeJS.ReadableStream): void {
+  let downloaded = 0;
+  const printProgress = (): void => {
+    process.stderr.write(formatDownloadProgress(downloaded));
+  };
+  const interval = setInterval(printProgress, 100);
+
+  stream.on('data', (chunk: Buffer) => {
+    downloaded += chunk.length;
+  });
+
+  stream.on('end', () => {
+    clearInterval(interval);
+    printProgress();
+    process.stderr.write('\nFinished downloading assets\n');
+  });
+}
+
+function getApiKeyOrThrow(): string {
+  const auth = readAuth();
+  if (!auth?.apiKey) {
+    throw new Error('Not logged in. Please provide apiKey or run: sharetribe-cli login');
+  }
+  return auth.apiKey;
+}
+
+function getAssetsPullUrl(marketplace: string, version?: string): URL {
+  const url = new URL(getApiBaseUrl() + '/assets/pull');
+  url.searchParams.set('marketplace', marketplace);
+  if (version) {
+    url.searchParams.set('version', version);
+  } else {
+    url.searchParams.set('version-alias', 'latest');
+  }
+  return url;
+}
+
+function getErrorMessage(body: string, statusCode: number): string {
+  try {
+    const parsed = JSON.parse(body) as { errors?: Array<{ message?: string }> };
+    const message = parsed.errors?.[0]?.message;
+    if (message) {
+      return message;
+    }
+  } catch {
+    // Ignore JSON parse errors
+  }
+  return body || `HTTP ${statusCode}`;
+}
+
+async function getAssetsZipStream(
+  marketplace: string,
+  version?: string
+): Promise<http.IncomingMessage> {
+  const url = getAssetsPullUrl(marketplace, version);
+  const apiKey = getApiKeyOrThrow();
+  const isHttps = url.protocol === 'https:';
+  const client = isHttps ? https : http;
+
+  return new Promise((resolve, reject) => {
+    const req = client.request(
+      {
+        method: 'GET',
+        hostname: url.hostname,
+        port: url.port || (isHttps ? 443 : 80),
+        path: url.pathname + url.search,
+        headers: {
+          Authorization: `Apikey ${apiKey}`,
+          Accept: 'application/zip',
+        },
+      },
+      (res) => {
+        const statusCode = res.statusCode || 0;
+        if (statusCode < 200 || statusCode >= 300) {
+          const chunks: Buffer[] = [];
+          res.on('data', (chunk: Buffer) => chunks.push(chunk));
+          res.on('end', () => {
+            const body = Buffer.concat(chunks).toString('utf-8');
+            reject(new Error(getErrorMessage(body, statusCode)));
+          });
+          return;
+        }
+        resolve(res);
+      }
+    );
+
+    req.setTimeout(120000, () => {
+      req.destroy(new Error('Request timeout'));
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+function createTempZipPath(): string {
+  return join(tmpdir(), `assets-${Date.now()}.zip`);
+}
+
+function removeAssetsDir(filename: string): string {
+  if (filename.startsWith(ASSETS_DIR)) {
+    return filename.slice(ASSETS_DIR.length);
+  }
+  return filename;
+}
+
+function readStreamToString(stream: NodeJS.ReadableStream): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
+    stream.on('error', reject);
+  });
+}
+
+async function unzipAssets(zipPath: string, basePath: string): Promise<AssetMetadata> {
+  return new Promise((resolve, reject) => {
+    yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
+      if (err || !zipfile) {
+        reject(err || new Error('Failed to open zip file'));
+        return;
+      }
+
+      let assetMeta: AssetMetadata | null = null;
+
+      zipfile.on('error', reject);
+      zipfile.on('end', () => {
+        if (!assetMeta) {
+          reject(new Error('Asset metadata not found in zip'));
+          return;
+        }
+        resolve(assetMeta);
+      });
+
+      zipfile.readEntry();
+      zipfile.on('entry', (entry) => {
+        if (entry.fileName.endsWith('/')) {
+          zipfile.readEntry();
+          return;
+        }
+
+        zipfile.openReadStream(entry, (streamErr, readStream) => {
+          if (streamErr || !readStream) {
+            reject(streamErr || new Error('Failed to read zip entry'));
+            return;
+          }
+
+          if (entry.fileName === ASSET_META_FILENAME) {
+            readStreamToString(readStream)
+              .then((content) => {
+                assetMeta = parseAssetMetadataEdn(content);
+                if (!assetMeta) {
+                  reject(new Error('Invalid asset metadata'));
+                  return;
+                }
+                zipfile.readEntry();
+              })
+              .catch(reject);
+            return;
+          }
+
+          const assetPath = join(basePath, removeAssetsDir(entry.fileName));
+          const assetDir = dirname(assetPath);
+          if (!existsSync(assetDir)) {
+            mkdirSync(assetDir, { recursive: true });
+          }
+
+          pipeline(readStream, createWriteStream(assetPath))
+            .then(() => zipfile.readEntry())
+            .catch(reject);
+        });
+      });
+    });
+  });
 }
 
 /**
@@ -154,57 +393,48 @@ async function pullAssets(
       throw new Error(`${path} is not a directory`);
     }
 
-    // Fetch assets from API
-    const result = await sdkPullAssets(undefined, marketplace, version ? { version } : undefined);
-    const remoteVersion = result.version;
-
-    // Read current metadata
+    const localAssets = prune ? listLocalAssetPaths(path) : [];
     const currentMeta = readAssetMetadata(path);
+    const tempZipPath = createTempZipPath();
 
-    // Check if up to date
-    if (currentMeta && currentMeta.version === remoteVersion && result.assets.length === currentMeta.assets.length) {
-      console.log('Assets are up to date.');
-      return;
-    }
+    try {
+      const zipStream = await getAssetsZipStream(marketplace, version);
+      printDownloadProgress(zipStream);
+      await pipeline(zipStream, createWriteStream(tempZipPath));
 
-    // Write assets to disk
-    const newAssets: Array<{ path: string; 'content-hash': string }> = [];
-    for (const asset of result.assets) {
-      const assetPath = join(path, asset.path);
-      const assetDir = dirname(assetPath);
+      const newAssetMeta = await unzipAssets(tempZipPath, path);
+      const remoteVersion = newAssetMeta.version;
 
-      if (!existsSync(assetDir)) {
-        mkdirSync(assetDir, { recursive: true });
-      }
+      const deletedPaths = prune
+        ? new Set(localAssets.filter(p => !newAssetMeta.assets.some(a => a.path === p)))
+        : new Set<string>();
 
-      // Decode base64 data
-      const data = Buffer.from(asset.dataRaw, 'base64');
-      writeFileSync(assetPath, data);
+      const updated = currentMeta?.version !== remoteVersion;
+      const shouldReportUpdate = updated || deletedPaths.size > 0;
 
-      const hash = calculateHash(data);
-      newAssets.push({ path: asset.path, 'content-hash': asset.contentHash || hash });
-    }
-
-    // Prune deleted assets if requested
-    if (prune && currentMeta) {
-      const remotePaths = new Set(result.assets.map(a => a.path));
-      for (const localAsset of currentMeta.assets) {
-        if (!remotePaths.has(localAsset.path)) {
-          const assetPath = join(path, localAsset.path);
-          if (existsSync(assetPath)) {
-            unlinkSync(assetPath);
+      if (deletedPaths.size > 0) {
+        for (const assetPath of deletedPaths) {
+          const fullPath = join(path, assetPath);
+          if (existsSync(fullPath)) {
+            unlinkSync(fullPath);
           }
         }
       }
+
+      if (shouldReportUpdate) {
+        writeAssetMetadata(path, {
+          version: remoteVersion,
+          assets: newAssetMeta.assets,
+        });
+        console.log(`Version ${remoteVersion} successfully pulled.`);
+      } else {
+        console.log('Assets are up to date.');
+      }
+    } finally {
+      if (existsSync(tempZipPath)) {
+        unlinkSync(tempZipPath);
+      }
     }
-
-    // Update metadata
-    writeAssetMetadata(path, {
-      version: remoteVersion,
-      assets: newAssets,
-    });
-
-    console.log(`Version ${remoteVersion} successfully pulled.`);
   } catch (error) {
     if (error && typeof error === 'object' && 'message' in error) {
       printError(error.message as string);
@@ -396,3 +626,9 @@ export function registerAssetsCommands(program: Command): void {
       await pushAssets(marketplace, opts.path, opts.prune);
     });
 }
+
+export const __test__ = {
+  formatDownloadProgress,
+  removeAssetsDir,
+  parseAssetMetadataEdn,
+};
