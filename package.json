@@ -11,7 +11,7 @@
     "test": "npm -w packages/sharetribe-cli test",
     "lint": "npm run lint --workspaces",
     "clean": "rm -rf packages/*/dist packages/*/node_modules node_modules",
-    "deploy": "(npm whoami >/dev/null 2>&1 || npm login) && npm -w packages/sharetribe-cli publish --access public && npm -w packages/sharetribe-flex-build-sdk publish --access public"
+    "deploy": "npm run build && (npm whoami >/dev/null 2>&1 || echo | npm login) && echo | npm -w packages/sharetribe-cli publish --access public && echo | npm -w packages/sharetribe-flex-build-sdk publish --access public"
   },
   "keywords": [
     "sharetribe",
