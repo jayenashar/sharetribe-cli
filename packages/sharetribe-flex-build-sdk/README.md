@@ -205,17 +205,16 @@ The SDK provides programmatic access to CLI capabilities:
 | `process update-alias` | `updateAlias()` |
 | `process delete-alias` | `deleteAlias()` |
 
-**Note**: For v1.15.0, the SDK focuses on process management (the core functionality). The CLI includes additional commands (search, assets, notifications, listing-approval, stripe, events) which use the lower-level API client functions exported by this SDK. Future versions may add higher-level wrappers for these commands.
+**Note**: The SDK focuses on process management (the core functionality). The CLI includes additional commands (search, assets, notifications, listing-approval, stripe, events) which use the lower-level API client functions exported by this SDK. Future versions may add higher-level wrappers for these commands.
 
 ## Related Packages
 
-- [sharetribe-cli](https://www.npmjs.com/package/sharetribe-cli) - Command-line interface (v1.15.0, depends on this SDK)
+- [sharetribe-cli](https://www.npmjs.com/package/sharetribe-cli) - Command-line interface that depends on this SDK
 
 ## Version Relationship
 
-- CLI version 1.15.0 depends on SDK version 1.15.0 exactly
+- The CLI and SDK versions are kept in sync (1-to-1 relationship)
 - Both packages are maintained in the same [monorepo](https://github.com/jayenashar/sharetribe-cli)
-- Versions are kept in sync (1-to-1 relationship)
 
 ## License
 
