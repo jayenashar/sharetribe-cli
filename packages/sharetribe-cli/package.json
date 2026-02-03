@@ -1,7 +1,7 @@
 {
   "name": "sharetribe-cli",
-  "version": "1.16.2",
-  "description": "Unofficial Sharetribe CLI - 100% compatible with flex-cli",
+  "version": "1.16.3",
+  "description": "UNOFFICIAL Sharetribe CLI reimplementation built on sharetribe-flex-build-sdk - 100% compatible with official flex-cli",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
@@ -20,6 +20,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "postinstall": "echo '\n⚠️  NOTICE: This is an UNOFFICIAL Sharetribe CLI (community reimplementation).\n   For the official CLI, install: npm install -g flex-cli\n'",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -27,7 +28,9 @@
     "flex",
     "cli",
     "marketplace",
-    "transaction-process"
+    "transaction-process",
+    "unofficial",
+    "community"
   ],
   "author": "",
   "license": "Apache-2.0",

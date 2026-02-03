@@ -1,9 +1,11 @@
 # Sharetribe CLI
 
-An unofficial command-line interface for [Sharetribe](https://www.sharetribe.com/). Sharetribe CLI enables you to
-manage the transaction processes, transactional email templates, assets, and other resources of your marketplaces.
+> **DISCLAIMER**: This is an UNOFFICIAL community-maintained CLI reimplementation.
+> For the official Sharetribe CLI, install [flex-cli](https://www.npmjs.com/package/flex-cli).
 
-This CLI is designed to be 100% compatible with the official `flex-cli`, using the same command structure and configuration files.
+A command-line interface for [Sharetribe](https://www.sharetribe.com/) that enables you to manage the transaction processes, transactional email templates, assets, and other resources of your marketplaces.
+
+This CLI is a reimplementation built on [`sharetribe-flex-build-sdk`](https://www.npmjs.com/package/sharetribe-flex-build-sdk) and is designed to be 100% compatible with the official `flex-cli`, using the same command structure and configuration files.
 
 To use Sharetribe CLI, you will need a marketplace and an admin user API key. You can create a Sharetribe marketplace from
 [www.sharetribe.com/](https://www.sharetribe.com/) and get credentials to Console where you can generate new API keys in [your account's "Manage API keys"](https://console.sharetribe.com/api-keys).
