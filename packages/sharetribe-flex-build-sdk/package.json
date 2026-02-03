@@ -1,6 +1,6 @@
 {
   "name": "sharetribe-flex-build-sdk",
-  "version": "1.16.1",
+  "version": "1.16.2",
   "description": "SDK for building and managing Sharetribe Flex transaction processes",
   "type": "module",
   "main": "./dist/index.js",
@@ -36,8 +36,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jayenashar/sharetribe-flex-build-sdk"
+    "url": "https://github.com/jayenashar/sharetribe-cli",
+    "directory": "packages/sharetribe-flex-build-sdk"
   },
+  "homepage": "https://github.com/jayenashar/sharetribe-cli#readme",
   "dependencies": {
     "jsedn": "^0.4.1",
     "transit-js": "^0.8.874"
