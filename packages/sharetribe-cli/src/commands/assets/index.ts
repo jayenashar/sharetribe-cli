@@ -219,7 +219,7 @@ function printDownloadProgress(stream: NodeJS.ReadableStream): void {
 function getApiKeyOrThrow(): string {
   const auth = readAuth();
   if (!auth?.apiKey) {
-    throw new Error('Not logged in. Please provide apiKey or run: sharetribe-cli login');
+    throw new Error('Not logged in. Please provide apiKey or run: sharetribe-community-cli login');
   }
   return auth.apiKey;
 }

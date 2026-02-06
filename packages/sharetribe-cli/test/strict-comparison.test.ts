@@ -17,7 +17,7 @@ function runCli(
   cli: 'flex' | 'sharetribe',
   envOverrides?: Record<string, string>
 ): string {
-  const cliName = cli === 'flex' ? 'flex-cli' : 'sharetribe-cli';
+  const cliName = cli === 'flex' ? 'flex-cli' : 'sharetribe-community-cli';
   const env = envOverrides ? { ...process.env, ...envOverrides } : process.env;
   try {
     return execSync(`${cliName} ${command}`, {
@@ -211,7 +211,7 @@ describe('Strict Byte-by-Byte Comparison Tests', () => {
       const output = runCli('--help', 'sharetribe');
 
       expect(output).toContain('USAGE');
-      expect(output).toContain('$ sharetribe-cli [COMMAND]');
+      expect(output).toContain('$ sharetribe-community-cli [COMMAND]');
     });
 
     it('main help has COMMANDS section', () => {
@@ -583,7 +583,7 @@ describe('Strict Byte-by-Byte Comparison Tests', () => {
       const setFlexOutput = runCli(setCommand, 'flex');
       const verifyFlexOutput = runCli(`search --marketplace ${MARKETPLACE}`, 'flex');
 
-      // 3. Run all 3 sharetribe-cli commands
+      // 3. Run all 3 sharetribe-community-cli commands
       const unsetShareOutput = runCli(
         `search unset --marketplace ${MARKETPLACE} --key ${testKey} --scope ${testScope} --schema-for ${testSchemaFor}`,
         'sharetribe'
@@ -604,7 +604,7 @@ describe('Strict Byte-by-Byte Comparison Tests', () => {
 
       return new Promise<void>((resolve, reject) => {
         const flexProc = spawn('flex-cli', ['events', 'tail', '--marketplace', MARKETPLACE, '--limit', '1']);
-        const shareProc = spawn('sharetribe-cli', ['events', 'tail', '--marketplace', MARKETPLACE, '--limit', '1']);
+        const shareProc = spawn('sharetribe-community-cli', ['events', 'tail', '--marketplace', MARKETPLACE, '--limit', '1']);
 
         let flexOutput = '';
         let shareOutput = '';

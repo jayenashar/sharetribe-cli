@@ -6,14 +6,14 @@ Monorepo containing the unofficial Sharetribe CLI and Build SDK.
 
 This repository contains two npm packages:
 
-### [`sharetribe-cli`](./packages/sharetribe-cli)
+### [`sharetribe-community-cli`](./packages/sharetribe-cli)
 
 Command-line interface for Sharetribe Flex - 100% compatible with the official flex-cli.
 
 ```bash
-npm install -g sharetribe-cli
-sharetribe-cli login
-sharetribe-cli process list
+npm install -g sharetribe-community-cli
+sharetribe-community-cli login
+sharetribe-community-cli process list
 ```
 
 ### [`sharetribe-flex-build-sdk`](./packages/sharetribe-flex-build-sdk)
@@ -79,7 +79,7 @@ See [goals.md](./goals.md) for detailed project goals.
 
 Both packages are published independently to npm:
 
-- `sharetribe-cli` - Command-line tool
+- `sharetribe-community-cli` - Command-line tool
 - `sharetribe-flex-build-sdk` - Programmatic SDK
 
 ## License

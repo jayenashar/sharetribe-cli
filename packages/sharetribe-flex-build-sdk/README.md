@@ -209,12 +209,12 @@ The SDK provides programmatic access to CLI capabilities:
 
 ## Related Packages
 
-- [sharetribe-cli](https://www.npmjs.com/package/sharetribe-cli) - Command-line interface that depends on this SDK
+- [sharetribe-community-cli](https://www.npmjs.com/package/sharetribe-community-cli) - Command-line interface that depends on this SDK
 
 ## Version Relationship
 
 - The CLI and SDK versions are kept in sync (1-to-1 relationship)
-- Both packages are maintained in the same [monorepo](https://github.com/jayenashar/sharetribe-cli)
+- Both packages are maintained in the same [monorepo](https://github.com/sharetribe-community/sharetribe-cli)
 
 ## License
 

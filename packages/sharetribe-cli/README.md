@@ -15,19 +15,19 @@ To use Sharetribe CLI, you will need a marketplace and an admin user API key. Yo
 Install with npm:
 
 ```bash
-npm install -g sharetribe-cli
+npm install -g sharetribe-community-cli
 ```
 
 or with yarn:
 
 ```bash
-yarn global add sharetribe-cli
+yarn global add sharetribe-community-cli
 ```
 
 To verify the installation and to see available commands, run:
 
 ```bash
-sharetribe-cli
+sharetribe-community-cli
 ```
 
 ## Usage
@@ -35,7 +35,7 @@ sharetribe-cli
 First, authenticate with your marketplace:
 
 ```bash
-sharetribe-cli login
+sharetribe-community-cli login
 ```
 
 The CLI will prompt you for your API key and marketplace ID. These credentials are stored in `~/.config/sharetribe-cli/auth.edn`.
@@ -57,8 +57,8 @@ The CLI supports all commands available in the official flex-cli:
 Use `--help` to see all available commands and their options:
 
 ```bash
-sharetribe-cli --help
-sharetribe-cli process --help
+sharetribe-community-cli --help
+sharetribe-community-cli process --help
 ```
 
 ## Compatibility
@@ -71,7 +71,7 @@ This CLI is built using the [`sharetribe-flex-build-sdk`](https://www.npmjs.com/
 
 ## Issues
 
-If you encounter any issues, please report them at [github.com/jayenashar/sharetribe-cli/issues](https://github.com/jayenashar/sharetribe-cli/issues).
+If you encounter any issues, please report them at [github.com/sharetribe-community/sharetribe-cli/issues](https://github.com/sharetribe-community/sharetribe-cli/issues).
 
 ## License
 

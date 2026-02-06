@@ -1,11 +1,15 @@
 {
-  "name": "sharetribe-cli",
-  "version": "1.16.3",
+  "name": "sharetribe-community-cli",
+  "version": "1.16.9",
   "description": "UNOFFICIAL Sharetribe CLI reimplementation built on sharetribe-flex-build-sdk - 100% compatible with official flex-cli",
   "type": "module",
   "main": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "bin": {
-    "sharetribe-cli": "./dist/index.js"
+    "sharetribe-community-cli": "./dist/index.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -20,7 +24,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "postinstall": "echo '\n⚠️  NOTICE: This is an UNOFFICIAL Sharetribe CLI (community reimplementation).\n   For the official CLI, install: npm install -g flex-cli\n'",
+    "postinstall": "printf '\\n\\033[33m⚠️  NOTICE: This is an UNOFFICIAL Sharetribe CLI (community reimplementation).\\033[0m\\n\\033[33m   For the official CLI, install: \\033[36mnpm install -g flex-cli\\033[0m\\n\\n' >&2",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -36,15 +40,17 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jayenashar/sharetribe-cli"
+    "url": "https://github.com/sharetribe-community/sharetribe-cli",
+    "directory": "packages/sharetribe-cli"
   },
+  "homepage": "https://github.com/sharetribe-community/sharetribe-cli/tree/master/packages/sharetribe-cli",
   "dependencies": {
     "@types/yargs": "^17.0.35",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "inquirer": "^9.2.23",
     "jsedn": "^0.4.1",
-    "sharetribe-flex-build-sdk": "^1.16.1",
+    "sharetribe-flex-build-sdk": "^1.16.9",
     "yargs": "^18.0.0",
     "yauzl": "^3.2.0"
   },

@@ -31,7 +31,7 @@ function getAuthHeaders(apiKey?: string): Record<string, string> {
   if (!key) {
     const auth = readAuth();
     if (!auth) {
-      throw new Error('Not logged in. Please provide apiKey or run: sharetribe-cli login');
+      throw new Error('Not logged in. Please provide apiKey or run: sharetribe-community-cli login');
     }
     key = auth.apiKey;
   }

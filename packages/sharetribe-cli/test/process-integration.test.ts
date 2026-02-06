@@ -1,7 +1,7 @@
 /**
  * Strict byte-by-byte comparison test for process workflow
  *
- * Tests that sharetribe-cli produces identical output to flex-cli for:
+ * Tests that sharetribe-community-cli produces identical output to flex-cli for:
  * 1. Pull default-booking process
  * 2. Push unchanged (should show "No changes")
  * 3. Modify the process
@@ -24,7 +24,7 @@ const TEST_ALIAS = 'test-integration-alias';
  * Executes a CLI command and returns output
  */
 function runCli(command: string, cli: 'flex' | 'sharetribe'): string {
-  const cliName = cli === 'flex' ? 'flex-cli' : 'sharetribe-cli';
+  const cliName = cli === 'flex' ? 'flex-cli' : 'sharetribe-community-cli';
   try {
     return execSync(`${cliName} ${command}`, {
       encoding: 'utf-8',
@@ -41,7 +41,7 @@ function runCli(command: string, cli: 'flex' | 'sharetribe'): string {
 }
 
 // NOTE: This integration test is skipped by default because it requires:
-// 1. Valid authentication (run `sharetribe-cli login` first)
+// 1. Valid authentication (run `sharetribe-community-cli login` first)
 // 2. Access to expertapplication-dev marketplace
 // 3. The push API endpoint to be working correctly
 //
@@ -152,7 +152,7 @@ describe('Process Workflow - Strict Comparison', () => {
         'flex'
       );
 
-      // 9. Update same alias with sharetribe-cli (tests that update works)
+      // 9. Update same alias with sharetribe-community-cli (tests that update works)
       const updateAliasShareOutput = runCli(
         `process update-alias --marketplace ${MARKETPLACE} --process ${PROCESS_NAME} --version ${newVersion} --alias ${TEST_ALIAS}`,
         'sharetribe'

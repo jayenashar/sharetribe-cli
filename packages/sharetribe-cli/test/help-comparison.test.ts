@@ -11,7 +11,7 @@ import { execSync } from 'child_process';
  * Executes a CLI command and returns output
  */
 function runCli(command: string, cli: 'flex' | 'sharetribe'): string {
-  const cliName = cli === 'flex' ? 'flex-cli' : 'sharetribe-cli';
+  const cliName = cli === 'flex' ? 'flex-cli' : 'sharetribe-community-cli';
   try {
     return execSync(`${cliName} ${command}`, {
       encoding: 'utf-8',
@@ -121,7 +121,7 @@ describe('Help Comparison Tests', () => {
 
     it('has correct usage', () => {
       const shareOutput = runCli('help process', 'sharetribe');
-      expect(shareOutput).toMatch(/\$ sharetribe-cli process$/m);
+      expect(shareOutput).toMatch(/\$ sharetribe-community-cli process$/m);
     });
   });
 
@@ -216,7 +216,7 @@ describe('Help Comparison Tests', () => {
       const shareOutput = runCli('help login', 'sharetribe');
 
       expect(shareOutput).toContain('USAGE');
-      expect(shareOutput).toContain('$ sharetribe-cli login');
+      expect(shareOutput).toContain('$ sharetribe-community-cli login');
     });
   });
 
@@ -225,7 +225,7 @@ describe('Help Comparison Tests', () => {
       const shareOutput = runCli('help logout', 'sharetribe');
 
       expect(shareOutput).toContain('USAGE');
-      expect(shareOutput).toContain('$ sharetribe-cli logout');
+      expect(shareOutput).toContain('$ sharetribe-community-cli logout');
     });
   });
 
@@ -234,7 +234,7 @@ describe('Help Comparison Tests', () => {
       const shareOutput = runCli('help version', 'sharetribe');
 
       expect(shareOutput).toContain('USAGE');
-      expect(shareOutput).toContain('$ sharetribe-cli version');
+      expect(shareOutput).toContain('$ sharetribe-community-cli version');
     });
   });
 
@@ -272,7 +272,7 @@ describe('Help Comparison Tests', () => {
         // Should have at least description and USAGE
         expect(lines.length).toBeGreaterThan(2);
         expect(output).toContain('USAGE');
-        expect(output).toMatch(/\$ sharetribe-cli/);
+        expect(output).toMatch(/\$ sharetribe-community-cli/);
       });
 
       it(`help ${cmd} - ends with empty line`, () => {

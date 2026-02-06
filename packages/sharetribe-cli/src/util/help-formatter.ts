@@ -145,10 +145,10 @@ function collectAllLeafCommands(cmd: Command): Array<{ name: string; description
 }
 
 /**
- * Gets the command name for usage (flex-cli vs sharetribe-cli)
+ * Gets the command name for usage (flex-cli vs sharetribe-community-cli)
  *
  * @param cmd - Commander command instance
- * @returns Command name (e.g., "sharetribe-cli" or "sharetribe-cli process")
+ * @returns Command name (e.g., "sharetribe-community-cli" or "sharetribe-community-cli process")
  */
 function getCommandName(cmd: Command): string {
   const names: string[] = [];
@@ -161,9 +161,9 @@ function getCommandName(cmd: Command): string {
     current = current.parent;
   }
 
-  // Replace first name with "sharetribe-cli" (or "flex-cli" for reference)
+  // Replace first name with "sharetribe-community-cli" (or "flex-cli" for reference)
   if (names.length > 0) {
-    names[0] = 'sharetribe-cli';
+    names[0] = 'sharetribe-community-cli';
   }
 
   return names.join(' ');
@@ -173,7 +173,7 @@ function getCommandName(cmd: Command): string {
  * Formats the USAGE line
  *
  * @param cmd - Commander command instance
- * @returns Usage string (e.g., "sharetribe-cli [COMMAND]" or "sharetribe-cli process list")
+ * @returns Usage string (e.g., "sharetribe-community-cli [COMMAND]" or "sharetribe-community-cli process list")
  */
 function formatUsage(cmd: Command): string {
   const cmdName = getCommandName(cmd);

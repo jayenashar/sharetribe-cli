@@ -1,5 +1,5 @@
 /**
- * Type definitions for sharetribe-cli
+ * Type definitions for sharetribe-community-cli
  */
 
 export interface CommandContext {

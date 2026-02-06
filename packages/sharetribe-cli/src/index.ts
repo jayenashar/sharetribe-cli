@@ -5,9 +5,11 @@
  */
 
 import { Command } from 'commander';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { homedir } from 'node:os';
+import chalk from 'chalk';
 import { version } from './commands/version.js';
 import { login } from './commands/login.js';
 import { logout } from './commands/logout.js';
@@ -29,6 +31,20 @@ const packageJson = JSON.parse(
   readFileSync(join(__dirname, '../package.json'), 'utf-8')
 );
 
+// Print unofficial notice to stderr on first run only
+const configDir = join(homedir(), '.config', 'flex-cli');
+const noticeShownMarker = join(configDir, '.sharetribe-community-cli-notice-shown');
+if (!existsSync(noticeShownMarker)) {
+  console.error(chalk.yellow('⚠️  NOTICE: This is an UNOFFICIAL Sharetribe CLI (community reimplementation).'));
+  console.error(chalk.yellow('   For the official CLI, install: ') + chalk.cyan('npm install -g flex-cli') + '\n');
+  try {
+    mkdirSync(configDir, { recursive: true });
+    writeFileSync(noticeShownMarker, new Date().toISOString());
+  } catch {
+    // Ignore errors writing marker file
+  }
+}
+
 // Route argv to handle process subcommands
 const routedArgv = routeProcessCommand(process.argv);
 
@@ -45,7 +61,7 @@ program.configureOutput({
 
 // Configure the main program
 program
-  .name('sharetribe-cli')
+  .name('sharetribe-community-cli')
   .description('CLI to interact with Sharetribe Flex')
   .version(packageJson.version, '-V', 'output the version number')
   .option('-m, --marketplace <MARKETPLACE_ID>', 'marketplace identifier');
