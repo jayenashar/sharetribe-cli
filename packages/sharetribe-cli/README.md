@@ -38,7 +38,7 @@ First, authenticate with your marketplace:
 sharetribe-community-cli login
 ```
 
-The CLI will prompt you for your API key and marketplace ID. These credentials are stored in `~/.config/sharetribe-cli/auth.edn`.
+The CLI will prompt you for your API key and marketplace ID. These credentials are stored in `~/.config/flex-cli/auth.edn`.
 
 ### Available commands
 
@@ -63,7 +63,7 @@ sharetribe-community-cli process --help
 
 ## Compatibility
 
-This CLI is designed to be a drop-in replacement for the official `flex-cli`. It uses the same configuration files (`~/.config/sharetribe-cli/` or `~/.config/flex-cli/`) and command structure.
+This CLI is designed to be a drop-in replacement for the official `flex-cli`. It uses the same configuration files (`~/.config/flex-cli/`) and command structure.
 
 ## SDK
 
